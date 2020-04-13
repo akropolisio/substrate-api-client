@@ -81,9 +81,9 @@ package = "sp-std"
 default-features = false
 
 [dev-dependencies.node_runtime]
-git = "https://github.com/paritytech/substrate"
-version = "2.0.0-alpha.5"
-package = "node-runtime"
+git = "https://github.com/alekspickle/akropolisOS-chain-node.git"
+package = "akropolisos-runtime"
+branch = 'develop'
 
 [dependencies.node_primitives]
 git = "https://github.com/paritytech/substrate"
