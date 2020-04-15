@@ -61,6 +61,11 @@ version = '2.0.0-alpha.6'
 package = "frame-support"
 default-features=false
 
+[dependencies.indices]
+version = '2.0.0-alpha.6'
+package = "pallet-indices"
+default-features=false
+
 [dependencies.sp-std]
 version = '2.0.0-alpha.6'
 package = "sp-std"
