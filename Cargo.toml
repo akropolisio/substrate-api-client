@@ -101,7 +101,6 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 	"serde/std",
-	"node_template_runtime/std",	
 	"serde_json",
 	"env_logger",
 	"log",
