@@ -68,7 +68,7 @@ default-features = false
 
 [dev-dependencies.node_template_runtime]
 git = "https://github.com/alekspickle/akropolisos-chain-node.git"
-branch = 'develop'
+branch = 'v2.0.0-alpha.6'
 package = "akropolisos-runtime"
 
 [dev-dependencies]
