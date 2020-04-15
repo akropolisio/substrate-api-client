@@ -66,11 +66,10 @@ version = '2.0.0-alpha.5'
 package = "sp-std"
 default-features = false
 
-[dependencies.node_template_runtime]
-git = "https://github.com/scs/substrate-node-template"
-branch = 'test-api-client'
-package = "node-template-runtime"
-default-features = false
+[dev-dependencies.node_template_runtime]
+git = "https://github.com/alekspickle/akropolisos-chain-node.git"
+branch = 'develop'
+package = "akropolisos-runtime"
 
 [dev-dependencies]
 wabt = "0.9.0"
