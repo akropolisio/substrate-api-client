@@ -72,9 +72,8 @@ pub mod rpc;
 
 #[cfg(feature = "std")]
 use events::{EventsDecoder, RawEvent, RuntimeEvent};
-#[cfg(feature = "std")]
-use sp_runtime::{AccountId32 as AccountId, MultiSigner, MultiSignature, traits::{Verify, IdentifyAccount}};
 
+use node_runtime::{AccountId, Signature };
 pub use sp_core::H256 as Hash;
 /// The block number type used in this runtime.
 pub type BlockNumber = u64;
@@ -91,14 +90,12 @@ pub type Balance = u128;
 pub type AccountData = AccountDataGen<Balance>;
 pub type AccountInfo = AccountInfoGen<Index, AccountData>;
 
-type AccountPublic = <MultiSignature as Verify>::Signer;
-
 #[cfg(feature = "std")]
 #[derive(Clone)]
 pub struct Api<P>
 where
     P: Pair,
-    MultiSignature: From<P::Signature>,
+    Signature: From<P::Signature>,
 {
     url: String,
     pub signer: Option<P>,
@@ -111,7 +108,7 @@ where
 impl<P> Api<P>
 where
     P: Pair,
-    MultiSignature: From<P::Signature>,
+    Signature: From<P::Signature>,
 {
     pub fn new(url: String) -> Self {
         let genesis_hash = Self::_get_genesis_hash(url.clone());
@@ -196,7 +193,7 @@ where
     }
 
     pub fn get_account_info(&self, address: &AccountId) -> Option<AccountInfo> {
-        let id: &[u8; 32] = address.as_ref();
+        let _id: &[u8; 32] = address.as_ref();
         let storagekey: sp_core::storage::StorageKey = self.metadata
             .module("System").unwrap()
             .storage("Account").unwrap()

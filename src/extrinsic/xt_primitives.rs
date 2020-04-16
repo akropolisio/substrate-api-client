@@ -25,7 +25,7 @@ use indices::address::Address;
 use sp_core::H256;
 use sp_core::blake2_256;
 use sp_runtime::{generic::Era};
-use node_runtime::{AccountId, Signature, AccountIndex};
+pub use node_runtime::{AccountId, Signature, AccountIndex};
 
 pub type GenericAddress = Address<AccountId, AccountIndex>; 
 

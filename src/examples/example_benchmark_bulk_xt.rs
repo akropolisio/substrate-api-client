@@ -20,7 +20,7 @@
 use clap::{load_yaml, App};
 
 use keyring::AccountKeyring;
-use node_runtime::{BalancesCall, Call};
+use node_runtime::{BalancesCall, AccountId, Call};
 use sp_core::crypto::Pair;
 
 use substrate_api_client::{
@@ -41,7 +41,7 @@ fn main() {
     );
 
     // define the recipient
-    let to = AccountKeyring::Bob.to_account_id();
+    let to: AccountId = AccountKeyring::Bob.to_account_id().into();
 
     let mut nonce = api.get_nonce().unwrap();
 
