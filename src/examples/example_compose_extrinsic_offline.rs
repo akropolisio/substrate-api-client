@@ -19,7 +19,7 @@
 use clap::{load_yaml, App};
 
 use keyring::AccountKeyring;
-use node_template_runtime::{BalancesCall, Call};
+use node_runtime::{BalancesCall, Call};
 use sp_core::crypto::Pair;
 
 use substrate_api_client::{

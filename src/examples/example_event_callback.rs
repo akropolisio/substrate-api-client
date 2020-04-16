@@ -25,7 +25,7 @@ use sp_core::H256 as Hash;
 // This module depends on node_runtime.
 // To avoid dependency collisions, node_runtime has been removed from the substrate-api-client library.
 // Replace this crate by your own if you run a custom substrate node to get your custom events.
-use node_template_runtime::Event;
+use node_runtime::Event;
 
 use substrate_api_client::utils::hexstr_to_vec;
 use substrate_api_client::Api;

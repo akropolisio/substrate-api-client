@@ -24,13 +24,10 @@ use codec::{Compact, Decode, Encode};
 use indices::address::Address;
 use sp_core::H256;
 use sp_core::blake2_256;
-use sp_runtime::{generic::Era, MultiSignature};
+use sp_runtime::{generic::Era};
+use node_runtime::{AccountId, Signature, AccountIndex};
 
-pub use sp_runtime::AccountId32 as AccountId;
-
-pub type AccountIndex = u64;
-
-pub type GenericAddress = Address<AccountId, AccountIndex>; //Address<AccountId, AccountIndex>;
+pub type GenericAddress = Address<AccountId, AccountIndex>; 
 
 /// Simple generic extra mirroring the SignedExtra currently used in extrinsics. Does not implement
 /// the SignedExtension trait. It simply encodes to the same bytes as the real SignedExtra. The
@@ -83,7 +80,7 @@ pub struct UncheckedExtrinsicV4<Call>
 where
     Call: Encode,
 {
-    pub signature: Option<(GenericAddress, MultiSignature, GenericExtra)>,
+    pub signature: Option<(GenericAddress, Signature, GenericExtra)>,
     pub function: Call,
 }
 
@@ -94,7 +91,7 @@ where
     pub fn new_signed(
         function: Call,
         signed: GenericAddress,
-        signature: MultiSignature,
+        signature: Signature,
         extra: GenericExtra,
     ) -> Self {
         UncheckedExtrinsicV4 {
