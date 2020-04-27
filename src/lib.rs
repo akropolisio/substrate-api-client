@@ -31,9 +31,9 @@ use std::convert::TryFrom;
 #[cfg(feature = "std")]
 use balances::AccountData as AccountDataGen;
 #[cfg(feature = "std")]
-use system::AccountInfo as AccountInfoGen;
-#[cfg(feature = "std")]
 use codec::{Decode, Encode, Error as CodecError};
+#[cfg(feature = "std")]
+use system::AccountInfo as AccountInfoGen;
 
 #[cfg(feature = "std")]
 use log::{debug, error, info};
@@ -66,17 +66,19 @@ pub mod events;
 pub mod node_metadata;
 
 #[cfg(feature = "std")]
-pub mod utils;
-#[cfg(feature = "std")]
 pub mod rpc;
+#[cfg(feature = "std")]
+pub mod utils;
 
 #[cfg(feature = "std")]
 use events::{EventsDecoder, RawEvent, RuntimeEvent};
 
-use node_runtime::{AccountId, Signature };
+use node_runtime::{AccountId, Signature};
 pub use sp_core::H256 as Hash;
 /// The block number type used in this runtime.
 pub type BlockNumber = u64;
+/// The timestamp moment type used in this runtime.
+pub type Moment = u64;
 /// Index of a transaction.
 //fixme: make generic
 pub type Index = u32;
@@ -186,7 +188,9 @@ where
                 let accountid: AccountId = Decode::decode(&mut &arr.encode()[..]).unwrap();
                 if let Some(info) = self.get_account_info(&accountid) {
                     Ok(info.nonce)
-                } else { Ok(0) }
+                } else {
+                    Ok(0)
+                }
             }
             None => Err("Can't get )nonce when no signer is set"),
         }
@@ -194,12 +198,16 @@ where
 
     pub fn get_account_info(&self, address: &AccountId) -> Option<AccountInfo> {
         let _id: &[u8; 32] = address.as_ref();
-        let storagekey: sp_core::storage::StorageKey = self.metadata
-            .module("System").unwrap()
-            .storage("Account").unwrap()
-            .get_map::<AccountId,AccountInfo>().unwrap()
+        let storagekey: sp_core::storage::StorageKey = self
+            .metadata
+            .module("System")
+            .unwrap()
+            .storage("Account")
+            .unwrap()
+            .get_map::<AccountId, AccountInfo>()
+            .unwrap()
             .key(address.clone());
-        info!("storagekey {:?}",storagekey);
+        info!("storagekey {:?}", storagekey);
         info!("storage key is: 0x{}", hex::encode(storagekey.0.clone()));
         self.get_storage_by_key_hash(storagekey.0)
     }
@@ -207,89 +215,118 @@ where
     pub fn get_account_data(&self, address: &AccountId) -> Option<AccountData> {
         if let Some(info) = self.get_account_info(address) {
             Some(info.data)
-        } else { None }
+        } else {
+            None
+        }
     }
 
     pub fn get_finalized_head(&self) -> WsResult<String> {
-        Self::_get_request(self.url.clone(), json_req::chain_get_finalized_head().to_string())
+        Self::_get_request(
+            self.url.clone(),
+            json_req::chain_get_finalized_head().to_string(),
+        )
     }
 
     pub fn get_header(&self, hash: Option<Hash>) -> WsResult<String> {
-        Self::_get_request(self.url.clone(), json_req::chain_get_header(hash).to_string())
+        Self::_get_request(
+            self.url.clone(),
+            json_req::chain_get_header(hash).to_string(),
+        )
     }
 
     pub fn get_block(&self, hash: Option<Hash>) -> WsResult<String> {
-        Self::_get_request(self.url.clone(), json_req::chain_get_block(hash).to_string())
+        Self::_get_request(
+            self.url.clone(),
+            json_req::chain_get_block(hash).to_string(),
+        )
     }
 
     pub fn get_request(&self, jsonreq: String) -> WsResult<String> {
         Self::_get_request(self.url.clone(), jsonreq)
     }
 
-    pub fn get_storage_value<V:Decode+Clone>(
+    pub fn get_storage_value<V: Decode + Clone>(
         &self,
         storage_prefix: &'static str,
         storage_key_name: &'static str,
     ) -> Option<V> {
-        let storagekey: sp_core::storage::StorageKey = self.metadata
-                .module(storage_prefix).unwrap()
-                .storage(storage_key_name).unwrap()
-                .get_value().unwrap()
-                .key();
+        let storagekey: sp_core::storage::StorageKey = self
+            .metadata
+            .module(storage_prefix)
+            .unwrap()
+            .storage(storage_key_name)
+            .unwrap()
+            .get_value()
+            .unwrap()
+            .key();
         info!("storage key is: 0x{}", hex::encode(storagekey.0.clone()));
         self.get_storage_by_key_hash(storagekey.0)
     }
 
-    pub fn get_storage_map<K:Encode, V:Decode+Clone>(
+    pub fn get_storage_map<K: Encode, V: Decode + Clone>(
         &self,
         storage_prefix: &'static str,
         storage_key_name: &'static str,
         map_key: K,
     ) -> Option<V> {
-        let storagekey: sp_core::storage::StorageKey = self.metadata
-                .module(storage_prefix).unwrap()
-                .storage(storage_key_name).unwrap()
-                .get_map::<K, V>().unwrap()
-                .key(map_key);
+        let storagekey: sp_core::storage::StorageKey = self
+            .metadata
+            .module(storage_prefix)
+            .unwrap()
+            .storage(storage_key_name)
+            .unwrap()
+            .get_map::<K, V>()
+            .unwrap()
+            .key(map_key);
         info!("storage key is: 0x{}", hex::encode(storagekey.0.clone()));
         self.get_storage_by_key_hash(storagekey.0)
     }
 
-    pub fn get_storage_by_key_hash<V:Decode+Clone>(&self, hash: Vec<u8>) -> Option<V> {
+    pub fn get_storage_by_key_hash<V: Decode + Clone>(&self, hash: Vec<u8>) -> Option<V> {
         let mut keyhash_str = hex::encode(hash);
         keyhash_str.insert_str(0, "0x");
         let jsonreq = json_req::state_get_storage(&keyhash_str);
         if let Ok(hexstr) = Self::_get_request(self.url.clone(), jsonreq.to_string()) {
             info!("storage hex = {}", hexstr);
             let hexstr = hexstr
-            .trim_matches('\"')
-            .to_string()
-            .trim_start_matches("0x")
-            .to_string();
+                .trim_matches('\"')
+                .to_string()
+                .trim_start_matches("0x")
+                .to_string();
             match hexstr.as_str() {
                 "null" => None,
                 _ => Some(Decode::decode(&mut &hex::decode(&hexstr).unwrap()[..]).unwrap()),
             }
-        } else { None }
+        } else {
+            None
+        }
     }
 
-    pub fn get_storage_double_map<K: Encode,Q: Encode, V:Decode+Clone> (
+    pub fn get_storage_double_map<K: Encode, Q: Encode, V: Decode + Clone>(
         &self,
         storage_prefix: &'static str,
         storage_key_name: &'static str,
         first: K,
         second: Q,
     ) -> Option<V> {
-        let storagekey: sp_core::storage::StorageKey = self.metadata
-                .module(storage_prefix).unwrap()
-                .storage(storage_key_name).unwrap()
-                .get_double_map::<K, Q, V>().unwrap()
-                .key(first, second);
+        let storagekey: sp_core::storage::StorageKey = self
+            .metadata
+            .module(storage_prefix)
+            .unwrap()
+            .storage(storage_key_name)
+            .unwrap()
+            .get_double_map::<K, Q, V>()
+            .unwrap()
+            .key(first, second);
         info!("storage key is: 0x{}", hex::encode(storagekey.0.clone()));
         self.get_storage_by_key_hash(storagekey.0)
     }
 
-    pub fn send_extrinsic(&self, xthex_prefixed: String, exit_on: XtStatus) -> WsResult<Option<Hash>> {
+    pub fn send_extrinsic(
+        &self,
+        xthex_prefixed: String,
+        exit_on: XtStatus,
+    ) -> WsResult<Option<Hash>> {
         debug!("sending extrinsic: {:?}", xthex_prefixed);
 
         let jsonreq = json_req::author_submit_and_watch_extrinsic(&xthex_prefixed).to_string();
@@ -305,17 +342,13 @@ where
                 let res = result_out.recv().unwrap();
                 info!("finalized: {}", res);
                 Ok(Some(hexstr_to_hash(res).unwrap()))
-            },
+            }
             XtStatus::Ready => {
-                rpc::send_extrinsic(
-                    self.url.clone(),
-                    jsonreq.clone(),
-                    result_in.clone(),
-                );
+                rpc::send_extrinsic(self.url.clone(), jsonreq.clone(), result_in.clone());
                 let res = result_out.recv().unwrap();
                 info!("ready: {}", res);
                 Ok(None)
-            },
+            }
             _ => panic!("can only wait for finalized or ready extrinsic status"),
         }
     }
