@@ -95,6 +95,7 @@ impl TryFrom<Metadata> for EventsDecoder {
         decoder.register_type_size::<u64>("AuthorityWeight")?;
         decoder.register_type_size::<u32>("MemberCount")?;
         decoder.register_type_size::<crate::AccountId>("AccountId")?;
+        decoder.register_type_size::<crate::Moment>("Moment")?;
         decoder.register_type_size::<crate::BlockNumber>("BlockNumber")?;
         decoder.register_type_size::<crate::Hash>("Hash")?;
         decoder.register_type_size::<crate::Balance>("Balance")?;
