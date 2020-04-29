@@ -340,12 +340,14 @@ where
         let (result_in, result_out) = channel();
         match exit_on {
             XtStatus::Finalized => {
+                info!("Waiting for transaction");
                 rpc::send_extrinsic_and_wait_until_finalized(
                     self.url.clone(),
                     jsonreq.clone(),
                     result_in.clone(),
                 );
-                let res = result_out.recv().unwrap();
+                let res = result_out.recv().map_err(|e| info!("Waiting for transaction res:{:?}", e)).expect("failed to finalize transaction");
+                
                 info!("finalized: {}", res);
                 Ok(Some(hexstr_to_hash(res).unwrap()))
             }
