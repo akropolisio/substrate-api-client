@@ -21,16 +21,13 @@ use sp_std::prelude::*;
 use std::fmt;
 
 use codec::{Compact, Decode, Encode, Error, Input};
-//use indices::address::Address;
+use indices::address::Address;
+pub use node_runtime::{AccountId, AccountIndex, Signature};
 use sp_core::blake2_256;
 use sp_core::H256;
-use sp_runtime::{generic::Era, MultiSignature};
+use sp_runtime::generic::Era;
 
-pub use sp_runtime::AccountId32 as AccountId;
-
-pub type AccountIndex = u64;
-
-pub type GenericAddress = AccountId; //Address<AccountId, AccountIndex>;
+pub type GenericAddress = Address<AccountId, AccountIndex>;
 
 /// Simple generic extra mirroring the SignedExtra currently used in extrinsics. Does not implement
 /// the SignedExtension trait. It simply encodes to the same bytes as the real SignedExtra. The
@@ -86,7 +83,7 @@ where
 /// The SingedExtra used does not need to implement SingedExtension here.
 #[derive(Clone, PartialEq)]
 pub struct UncheckedExtrinsicV4<Call> {
-    pub signature: Option<(GenericAddress, MultiSignature, GenericExtra)>,
+    pub signature: Option<(GenericAddress, Signature, GenericExtra)>,
     pub function: Call,
 }
 
@@ -97,7 +94,7 @@ where
     pub fn new_signed(
         function: Call,
         signed: GenericAddress,
-        signature: MultiSignature,
+        signature: Signature,
         extra: GenericExtra,
     ) -> Self {
         UncheckedExtrinsicV4 {
@@ -208,14 +205,13 @@ fn encode_with_vec_prefix<T: Encode, F: Fn(&mut Vec<u8>)>(encoder: F) -> Vec<u8>
 mod tests {
     use super::*;
     use crate::extrinsic::xt_primitives::{GenericAddress, GenericExtra};
-    use sp_runtime::MultiSignature;
 
     #[test]
     fn encode_decode_roundtrip_works() {
         let xt = UncheckedExtrinsicV4::new_signed(
             vec![1, 1, 1],
             GenericAddress::default(),
-            MultiSignature::default(),
+            Signature::default(),
             GenericExtra::default(),
         );
 
