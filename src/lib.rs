@@ -335,8 +335,16 @@ where
             XtStatus::Finalized => {
                 rpc::send_extrinsic_and_wait_until_finalized(self.url.clone(), jsonreq, result_in);
                 let res = result_out.recv().unwrap();
+
                 info!("finalized: {}", res);
-                Ok(Some(hexstr_to_hash(res).unwrap()))
+                let prefix = res[..2].into();
+                match prefix {
+                    "0x" => Ok(Some(hexstr_to_hash(res).unwrap())),
+                    _ => {
+                        error!("response is probably failed andhash is not valid");
+                        Ok(None)
+                    }
+                }
             }
             XtStatus::Ready => {
                 rpc::send_extrinsic(self.url.clone(), jsonreq, result_in);
