@@ -50,7 +50,7 @@ impl Handler for RpcClient {
 }
 
 pub fn on_get_request_msg(msg: Message, out: Sender, result: ThreadOut<String>) -> Result<()> {
-    info!("Got get_request_msg {}", msg);
+    // debug!("Got get_request_msg {}", msg);
     let retstr = msg.as_text().unwrap();
     let value: serde_json::Value = serde_json::from_str(retstr).unwrap();
 
