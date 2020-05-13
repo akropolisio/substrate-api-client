@@ -1,17 +1,23 @@
 pipeline {
   agent {
-    node {
-      label 'rust&&sgx'
+    docker {
+      image 'scssubstratee/substratee_dev:18.04-2.9.1-1.1.2'
+      args '''
+        -u root
+        --privileged
+      '''
     }
   }
   options {
     timeout(time: 2, unit: 'HOURS')
-    buildDiscarder(logRotator(numToKeepStr: '14'))
+    buildDiscarder(logRotator(numToKeepStr: '3'))
   }
   stages {
-    stage('Environment') {
+    stage('Start substrate-test-nodes') {
       steps {
-        sh './ci/install_rust.sh'
+        copyArtifacts fingerprintArtifacts: true, projectName: 'substraTEE/substrate-api-client-test-node/master', selector: lastCompleted()
+        sh 'target/release/node-template purge-chain --dev -y'
+        sh 'target/release/node-template --dev &'
       }
     }
     stage('Build') {
@@ -34,14 +40,6 @@ pipeline {
         sh 'cargo build --release --examples --message-format json > ${WORKSPACE}/build_examples_release.log'
       }
     }
-    stage('Start substrate-test-nodes') {
-      steps {
-        copyArtifacts fingerprintArtifacts: true, projectName: 'substraTEE/substrate-test-nodes/master', selector: lastCompleted()
-        sh 'target/release/substrate-test-node purge-chain --dev -y'
-        sh 'target/release/substrate-test-node --dev &'
-        sh 'sleep 10'
-      }
-    }
     stage('Unit tests') {
       options {
         timeout(time: 5, unit: 'MINUTES')
@@ -57,17 +55,14 @@ pipeline {
         timeout(time: 1, unit: 'MINUTES')
       }
       steps {
-        sh 'target/release/examples/example_custom_storage_struct'
+        // run examples
         sh 'target/release/examples/example_generic_extrinsic'
         sh 'target/release/examples/example_print_metadata'
         sh 'target/release/examples/example_transfer'
         sh 'target/release/examples/example_get_storage'
-        // echo 'Running tests which are known to hang (needs fixing)'
-        // catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        //   sh 'target/release/examples/example_compose_extrinsic_offline'
-        //   sh 'target/release/examples/example_contract'
-        //   sh 'target/release/examples/example_event_callback'
-        // }
+        sh 'target/release/examples/example_get_blocks'
+        sh 'target/release/examples/example_benchmark_bulk_xt'
+        // TODO: example needs fixing sh 'target/release/examples/example_sudo'
       }
     }
     stage('Clippy') {

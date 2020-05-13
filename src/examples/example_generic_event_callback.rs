@@ -29,7 +29,6 @@ struct TransferEventArgs {
     from: AccountId,
     to: AccountId,
     value: u128,
-    fee: u128,
 }
 
 fn main() {
@@ -41,16 +40,15 @@ fn main() {
     println!("Subscribe to events");
     let (events_in, events_out) = channel();
 
-    api.subscribe_events(events_in.clone());
+    api.subscribe_events(events_in);
     let args: TransferEventArgs = api
-        .wait_for_event("Balances", "Transfer", &events_out)
+        .wait_for_event("Balances", "Transfer", None, &events_out)
         .unwrap()
         .unwrap();
 
     println!("Transactor: {:?}", args.from);
     println!("Destination: {:?}", args.to);
     println!("Value: {:?}", args.value);
-    println!("Fee: {:?}", args.fee);
 }
 
 pub fn get_node_url_from_cli() -> String {

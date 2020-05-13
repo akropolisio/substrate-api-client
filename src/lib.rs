@@ -72,9 +72,10 @@ pub mod rpc;
 #[cfg(feature = "std")]
 use events::{EventsDecoder, RawEvent, RuntimeEvent};
 #[cfg(feature = "std")]
-use sp_runtime::{AccountId32 as AccountId, MultiSignature};
+use sp_runtime::{generic::SignedBlock, AccountId32 as AccountId, MultiSignature};
 
 pub use sp_core::H256 as Hash;
+
 /// The block number type used in this runtime.
 pub type BlockNumber = u64;
 /// The timestamp moment type used in this runtime.
@@ -85,6 +86,11 @@ pub type Index = u32;
 
 #[cfg(feature = "std")]
 pub use rpc::XtStatus;
+#[cfg(feature = "std")]
+use sp_runtime::{
+    traits::{Block, Header},
+    DeserializeOwned,
+};
 
 //fixme: make generic
 pub type Balance = u128;
@@ -219,32 +225,55 @@ where
         }
     }
 
-    pub fn get_finalized_head(&self) -> WsResult<String> {
+    pub fn get_finalized_head(&self) -> Option<Hash> {
         Self::_get_request(
             self.url.clone(),
             json_req::chain_get_finalized_head().to_string(),
         )
+        .map(|h_str| hexstr_to_hash(h_str).unwrap())
+        .ok()
     }
 
-    pub fn get_header(&self, hash: Option<Hash>) -> WsResult<String> {
+    pub fn get_header<H>(&self, hash: Option<Hash>) -> Option<H>
+    where
+        H: Header + DeserializeOwned,
+    {
         Self::_get_request(
             self.url.clone(),
             json_req::chain_get_header(hash).to_string(),
         )
+        .map(|h| serde_json::from_str(&h).unwrap())
+        .ok()
     }
 
-    pub fn get_block(&self, hash: Option<Hash>) -> WsResult<String> {
+    pub fn get_block<B>(&self, hash: Option<Hash>) -> Option<B>
+    where
+        B: Block + DeserializeOwned,
+    {
+        Self::get_signed_block(self, hash).map(|signed_block| signed_block.block)
+    }
+
+    /// A signed block is a block with Justification ,i.e., a Grandpa finality proof.
+    /// The interval at which finality proofs are provided is set via the
+    /// the `GrandpaConfig.justification_period` in a node's service.rs.
+    /// The Justification may be none.
+    pub fn get_signed_block<B>(&self, hash: Option<Hash>) -> Option<SignedBlock<B>>
+    where
+        B: Block + DeserializeOwned,
+    {
         Self::_get_request(
             self.url.clone(),
             json_req::chain_get_block(hash).to_string(),
         )
+        .map(|b| serde_json::from_str(&b).unwrap())
+        .ok()
     }
 
     pub fn get_request(&self, jsonreq: String) -> WsResult<String> {
         Self::_get_request(self.url.clone(), jsonreq)
     }
 
-    pub fn get_storage_value<V: Decode + Clone>(
+    pub fn get_storage_value<V: Decode>(
         &self,
         storage_prefix: &'static str,
         storage_key_name: &'static str,
@@ -301,7 +330,12 @@ where
         self.get_storage_by_key_hash(storagekey.0)
     }
 
-    pub fn get_storage_by_key_hash<V: Decode + Clone>(&self, hash: Vec<u8>) -> Option<V> {
+    pub fn get_storage_by_key_hash<V: Decode>(&self, hash: Vec<u8>) -> Option<V> {
+        self.get_opaque_storage_by_key_hash(hash)
+            .map(|v| Decode::decode(&mut v.as_slice()).unwrap())
+    }
+
+    pub fn get_opaque_storage_by_key_hash(&self, hash: Vec<u8>) -> Option<Vec<u8>> {
         let mut keyhash_str = hex::encode(hash);
         keyhash_str.insert_str(0, "0x");
         let jsonreq = json_req::state_get_storage(&keyhash_str);
@@ -314,7 +348,7 @@ where
                 .to_string();
             match hexstr.as_str() {
                 "null" => None,
-                _ => Some(Decode::decode(&mut &hex::decode(&hexstr).unwrap()[..]).unwrap()),
+                _ => Some(hex::decode(&hexstr).unwrap()),
             }
         } else {
             None
@@ -346,13 +380,27 @@ where
                     }
                 }
             }
+            XtStatus::InBlock => {
+                rpc::send_extrinsic_and_wait_until_in_block(self.url.clone(), jsonreq, result_in);
+                let res = result_out.recv().unwrap();
+                info!("inBlock: {}", res);
+                Ok(Some(hexstr_to_hash(res).unwrap()))
+            }
+            XtStatus::Broadcast => {
+                rpc::send_extrinsic_and_wait_until_broadcast(self.url.clone(), jsonreq, result_in);
+                let res = result_out.recv().unwrap();
+                info!("broadcast: {}", res);
+                Ok(None)
+            }
             XtStatus::Ready => {
                 rpc::send_extrinsic(self.url.clone(), jsonreq, result_in);
                 let res = result_out.recv().unwrap();
                 info!("ready: {}", res);
                 Ok(None)
             }
-            _ => panic!("can only wait for finalized or ready extrinsic status"),
+            _ => panic!(
+                "can only wait for finalized, in block, broadcast and ready extrinsic status"
+            ),
         }
     }
 
@@ -367,9 +415,10 @@ where
         &self,
         module: &str,
         variant: &str,
+        decoder: Option<EventsDecoder>,
         receiver: &Receiver<String>,
     ) -> Option<Result<E, CodecError>> {
-        self.wait_for_raw_event(module, variant, receiver)
+        self.wait_for_raw_event(module, variant, decoder, receiver)
             .map(|raw| E::decode(&mut &raw.data[..]))
     }
 
@@ -377,15 +426,18 @@ where
         &self,
         module: &str,
         variant: &str,
+        decoder: Option<EventsDecoder>,
         receiver: &Receiver<String>,
     ) -> Option<RawEvent> {
+        let event_decoder =
+            decoder.unwrap_or_else(|| EventsDecoder::try_from(self.metadata.clone()).unwrap());
+
         loop {
             let event_str = receiver.recv().unwrap();
 
             let _unhex = hexstr_to_vec(event_str).unwrap();
             let mut _er_enc = _unhex.as_slice();
 
-            let event_decoder = EventsDecoder::try_from(self.metadata.clone()).unwrap();
             let _events = event_decoder.decode_events(&mut _er_enc);
             info!("wait for raw event");
             match _events {
