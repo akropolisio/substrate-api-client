@@ -59,11 +59,6 @@ default-features=false
 package = "frame-support"
 version = '2.0.0-alpha.6'
 
-[dependencies.indices]
-default-features=false
-package = "pallet-indices"
-version = '2.0.0-alpha.6'
-
 [dependencies.sp-std]
 default-features = false
 version = '2.0.0-alpha.6'
