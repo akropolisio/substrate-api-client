@@ -32,6 +32,10 @@ default-features = false
 version = '2.0.0-alpha.7'
 package = "sp-io"
 
+[dependencies.indices]
+version = '2.0.0-alpha.7'
+package = "pallet-indices"
+
 [dependencies.metadata]
 version = '11.0.0-alpha.7'
 package = "frame-metadata"
