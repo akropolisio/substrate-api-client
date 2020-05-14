@@ -374,8 +374,8 @@ where
                 let prefix = res[..2].into();
                 match prefix {
                     "0x" => Ok(Some(hexstr_to_hash(res).unwrap())),
-                    e => {
-                        error!("response is probably failed and hash is not valid: {:?}", e);
+                    _ => {
+                        error!("response is probably failed and hash is not valid: {:?}", res);
                         Ok(None)
                     }
                 }
