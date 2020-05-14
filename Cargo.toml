@@ -1,6 +1,6 @@
 [package]
 name = "substrate-api-client"
-version = "0.4.3-sub2.0.0-alpha.7"
+version = "0.4.4"
 authors = ["Supercomputing Systems AG <info@scs.ch>"]
 edition = "2018"
 
@@ -14,14 +14,13 @@ serde_json      = { version = "1.0", optional = true }
 thiserror       = { version = "1.0", optional =true }
 primitive-types = { version = "0.6.1", optional = true, features = ["codec"] }
 
-node-runtime = { git = 'https://github.com/alekspickle/akropolisOS-chain-node', version = '0.5.10', package = 'runtime', branch = 'aura'}
+node-runtime = { git = 'https://github.com/alekspickle/akropolisOS-chain-node', version = '0.5.11', package = 'runtime', branch = 'aura'}
 
 [dependencies.sp-core]
 version = '2.0.0-alpha.7'
 package = "sp-core"
 default-features = false
 features = ["full_crypto"]
-version = '2.0.0-alpha.6'
 
 [dependencies.codec]
 package = "parity-scale-codec"
@@ -32,7 +31,6 @@ default-features = false
 [dependencies.runtime_io]
 version = '2.0.0-alpha.7'
 package = "sp-io"
-version = '2.0.0-alpha.6'
 
 [dependencies.metadata]
 version = '11.0.0-alpha.7'
@@ -63,18 +61,11 @@ default-features=false
 version = '2.0.0-alpha.7'
 package = "frame-support"
 default-features=false
-package = "frame-support"
-version = '2.0.0-alpha.6'
 
 [dependencies.sp-std]
 version = '2.0.0-alpha.7'
 package = "sp-std"
 default-features = false
-
-[dev-dependencies.node_template_runtime]
-git = "https://github.com/scs/substrate-api-client-test-node"
-tag = 'v2.0.0-alpha.7'
-package = "node-template-runtime"
 
 [dev-dependencies]
 wabt = "0.9.0"
@@ -86,7 +77,6 @@ package = "pallet-contracts"
 [dev-dependencies.keyring]
 version = '2.0.0-alpha.7'
 package = "sp-keyring"
-version = '2.0.0-alpha.6'
 
 [dev-dependencies.clap]
 version = "2.33"
