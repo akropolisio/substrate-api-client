@@ -193,6 +193,7 @@ where
                 arr.clone_from_slice(pair.to_owned().public().as_ref());
                 let accountid: AccountId = Decode::decode(&mut &arr.encode()[..]).unwrap();
                 if let Some(info) = self.get_account_info(&accountid) {
+                    log::info!("account nonce: {:?}", info.nonce);
                     Ok(info.nonce)
                 } else {
                     Ok(0)
